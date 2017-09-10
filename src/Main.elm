@@ -8,24 +8,47 @@ module App exposing
 import Html exposing (Html)
 import Html.Attributes as Attr
 
+import List
+import Random
+import Task
+import Time
+import Tuple
+
 type Msg
   = Msg
 
 type alias Model =
-  { items : List String
+  { words : List String
+  , currentWord : Maybe String
   }
 
 model : Model
 model =
-  { items = []
-  }
+  let
+    words = englishWordsToPractice
+  in
+    { words = words
+    , currentWord = List.head words
+    }
 
 view : Model -> Html Msg
 view model =
   Html.div []
     [ Html.h1 [ ] [ Html.text "Let's practice words!" ]
-    , Html.ul [ Attr.id "items" ] []
+    , markupForCurrentWord model.currentWord
+    , Html.h2 [ ] [ Html.text "Words we practice:" ]
+    , Html.ul
+        [ Attr.id "items" ]
+        ( List.map (\word -> Html.li [ ] [ Html.text word ]) model.words )
     ]
+
+markupForCurrentWord : Maybe String -> Html Msg
+markupForCurrentWord maybeWord =
+  case maybeWord of
+    Just word -> Html.h2 [ ] [ Html.span [ ] [ Html.text "Current Word:" ]
+                             , Html.span [ ] [ Html.text word ]
+                             ]
+    Nothing   -> Html.div [ ] [ ]
 
 update : Msg -> Model -> Model
 update msg model = model
