@@ -5,21 +5,31 @@ module App exposing
   , update
   )
 
-import Html exposing (Html)
-import Html.Attributes as Attr
+import WordGameCss
 
+import Css
+import Html exposing (Html)
+import Html.Attributes
+import Html.Events exposing (on, keyCode)
+import Json.Decode as Json
 import List
 import Random
 import Task
 import Time
 import Tuple
 
+import Html.CssHelpers
+
+{ id, class, classList } =
+    Html.CssHelpers.withNamespace "wordgame"
+
 type Msg
-  = Msg
+  = KeyUp Int
 
 type alias Model =
   { words : List String
   , currentWord : Maybe String
+  , selectedWordIndex : Maybe Int
   }
 
 model : Model
@@ -29,29 +39,40 @@ model =
   in
     { words = words
     , currentWord = List.head words
+    , selectedWordIndex = Nothing
     }
+
 
 view : Model -> Html Msg
 view model =
-  Html.div []
-    [ Html.h1 [ ] [ Html.text "Let's practice words!" ]
+  Html.div [ ]
+    [ Html.h1 [ ] [ Html.text "Let's practice words with Woden!" ]
     , markupForCurrentWord model.currentWord
-    , Html.h2 [ ] [ Html.text "Words we practice:" ]
+    , Html.h3 [ ] [ Html.text "Words we practice:" ]
     , Html.ul
-        [ Attr.id "items" ]
+        [ Html.Attributes.id "items" ]
         ( List.map (\word -> Html.li [ ] [ Html.text word ]) model.words )
     ]
 
 markupForCurrentWord : Maybe String -> Html Msg
 markupForCurrentWord maybeWord =
   case maybeWord of
-    Just word -> Html.h2 [ ] [ Html.span [ ] [ Html.text "Current Word:" ]
-                             , Html.span [ ] [ Html.text word ]
-                             ]
+    Just word -> Html.div [ class [ WordGameCss.CurrentWordContainer ] ]
+                          [ Html.h2
+                             [ class [ WordGameCss.CurrentWordLabel ] ]
+                             [ Html.text "Current word:" ]
+                          , Html.span
+                             [ class [ WordGameCss.CurrentWord ] ]
+                             [ Html.text word ]
+                          ]
     Nothing   -> Html.div [ ] [ ]
 
 update : Msg -> Model -> Model
 update msg model = model
+
+onKeyUp : (Int -> Msg) -> Html.Attribute Msg
+onKeyUp tagger =
+  on "keyup" (Json.map tagger keyCode)
 
 main =
   Html.beginnerProgram
