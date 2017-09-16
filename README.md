@@ -12,18 +12,17 @@ Completed Tasks
 
 Tasks
 -----
-* find out how to listen to key press events
-* add "selected" class when space bar is pressed
-* spacebar highlights the word (in red ?)
-* spacebar highlights each letter in turn
-* shift + spacebar goes back (but will not return to before highlighted state)
-* then show the word in french (?)
-* probably change the model to take in pairs
-* fair use images
-* tests ? (how could I start with tests next time ?)
-* deploy to CF ?
-* show a random english word (?)
-* compare / contrast Html.beginnerProgram with the docs?
+* [x] add "selected" class when advanced is pressed
+* [x] button to highlight the word (in red ?)
+* [x] second button goes back (but will not return to before highlighted state)
+* [x] button highlights each letter in turn
+* [ ] then show the word in french (?)
+* [ ] probably change the model to take in pairs
+* [ ] fair use images
+* [ ] tests ? (how could I start with tests next time ?)
+* [ ] deploy to CF ?
+* [ ] show a random english word (?)
+* [ ] compare / contrast Html.beginnerProgram with the docs?
 
 
 Open Questions

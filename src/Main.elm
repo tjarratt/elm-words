@@ -7,11 +7,13 @@ module App exposing
 
 import WordGameCss
 
+import Array exposing (..)
 import Css
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events exposing (on, keyCode)
 import Json.Decode as Json
+import Keyboard
 import List
 import Random
 import Task
@@ -24,22 +26,58 @@ import Html.CssHelpers
     Html.CssHelpers.withNamespace "wordgame"
 
 type Msg
-  = KeyUp Int
+  = KeyMsg Keyboard.KeyCode
+  | SpacebarPressed
+  | AdvanceIfNecessary
+
+
+type SelectionIndex
+  = NoSelection
+  | Everything
+  | Indexed Int
+  | EverythingAgain
+  | AdvanceToNextWord
+
+
+advanceSelectionIndex : String -> SelectionIndex -> SelectionIndex
+advanceSelectionIndex word selection =
+  case selection of
+    NoSelection       -> Everything
+    Everything        -> Indexed 0
+    Indexed i         -> if i == ((String.length word) - 1) then EverythingAgain else Indexed (i + 1)
+    EverythingAgain   -> AdvanceToNextWord
+    AdvanceToNextWord -> AdvanceToNextWord
 
 type alias Model =
-  { words : List String
-  , currentWord : Maybe String
-  , selectedWordIndex : Maybe Int
+  { words : Array String
+  , currentWord : String
+  , currentWordIndex : Int
+  , selectedIndex : SelectionIndex
   }
+
+
+init : (Model, Cmd Msg)
+init =
+  (model, Cmd.none)
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.batch [ Keyboard.downs KeyMsg ]
+
 
 model : Model
 model =
   let
     words = englishWordsToPractice
+    currentWord = case Array.get 0 words of
+                    Just word -> word
+                    Nothing   -> ""
   in
-    { words = words
-    , currentWord = List.head words
-    , selectedWordIndex = Nothing
+    { words            = words
+    , currentWord      = currentWord
+    , currentWordIndex = 0
+    , selectedIndex    = NoSelection
     }
 
 
@@ -47,74 +85,124 @@ view : Model -> Html Msg
 view model =
   Html.div [ ]
     [ Html.h1 [ ] [ Html.text "Let's practice words with Woden!" ]
-    , markupForCurrentWord model.currentWord
+    , markupForCurrentWord model
     , Html.h3 [ ] [ Html.text "Words we practice:" ]
     , Html.ul
         [ Html.Attributes.id "items" ]
-        ( List.map (\word -> Html.li [ ] [ Html.text word ]) model.words )
+        (Array.toList <| Array.map (\word -> Html.li [ ] [ Html.text word ]) model.words)
     ]
 
-markupForCurrentWord : Maybe String -> Html Msg
-markupForCurrentWord maybeWord =
-  case maybeWord of
-    Just word -> Html.div [ class [ WordGameCss.CurrentWordContainer ] ]
-                          [ Html.h2
-                             [ class [ WordGameCss.CurrentWordLabel ] ]
-                             [ Html.text "Current word:" ]
-                          , Html.span
-                             [ class [ WordGameCss.CurrentWord ] ]
-                             [ Html.text word ]
-                          ]
-    Nothing   -> Html.div [ ] [ ]
 
-update : Msg -> Model -> Model
-update msg model = model
+markupForCurrentWord : Model -> Html Msg
+markupForCurrentWord model =
+   Html.div [ class [ WordGameCss.CurrentWordContainer ] ]
+            [ Html.h2
+               [ class [ WordGameCss.CurrentWordLabel ] ]
+               [ Html.text "Current word:" ]
+            , Html.span
+               [ class
+                 ( List.append
+                   [ WordGameCss.CurrentWord ]
+                   ( cssClassesForCurrentWord model.selectedIndex )
+                 )
+               ]
+               (String.toList model.currentWord
+               |> List.map String.fromChar
+               |> List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ] ))
+            ]
 
-onKeyUp : (Int -> Msg) -> Html.Attribute Msg
-onKeyUp tagger =
-  on "keyup" (Json.map tagger keyCode)
+cssForLetterAtIndex : Int -> Model -> List WordGameCss.CssClasses
+cssForLetterAtIndex index model =
+  case model.selectedIndex of
+    Indexed i -> if index == i then [ WordGameCss.CurrentWordSelected ] else [ ]
+    _         -> [ ]
+
+cssClassesForCurrentWord : SelectionIndex -> List WordGameCss.CssClasses
+cssClassesForCurrentWord index =
+  case index of
+    NoSelection     -> [ ]
+    Everything      -> [ WordGameCss.CurrentWordSelected ]
+    EverythingAgain -> [ WordGameCss.CurrentWordSelected ]
+    _               -> [ ]
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  ( (updateModel msg model), Cmd.none )
+
+updateModel : Msg -> Model -> Model
+updateModel msg model =
+  case msg of
+    KeyMsg i           -> handleKeyUp model i
+    SpacebarPressed    -> handleSpacebar model
+    AdvanceIfNecessary -> handleAdvance model
+
+handleKeyUp : Model -> Int -> Model
+handleKeyUp model i =
+  if i == 32
+    then updateModel SpacebarPressed model
+    else model
+
+handleSpacebar : Model -> Model
+handleSpacebar model =
+  let
+    newModel = { model | selectedIndex = advanceSelectionIndex model.currentWord model.selectedIndex }
+  in
+    updateModel AdvanceIfNecessary newModel
+
+handleAdvance : Model -> Model
+handleAdvance model =
+  let
+    nextIndex = model.currentWordIndex + 1
+    nextWord = Maybe.withDefault "" <| Array.get nextIndex englishWordsToPractice
+  in
+    case model.selectedIndex of
+      AdvanceToNextWord -> { model | currentWordIndex = nextIndex, currentWord = nextWord, selectedIndex = NoSelection }
+      _                 -> model
 
 main =
-  Html.beginnerProgram
-    { model = model
+  Html.program
+    { init = init
     , update = update
     , view = view
+    , subscriptions = subscriptions
     }
 
-englishWordsToPractice : List String
+englishWordsToPractice : Array String
 englishWordsToPractice =
-  [ "cat"
-  , "fox"
-  , "bear"
-  , "turtle"
-  , "dog"
+  Array.fromList
+    [ "cat"
+    , "fox"
+    , "bear"
+    , "turtle"
+    , "dog"
 
-  , "mommy"
-  , "daddy"
-  , "baby"
+    , "mommy"
+    , "daddy"
+    , "baby"
 
-  , "apple"
-  , "sandwich"
-  , "breakfast"
-  , "lunch"
-  , "dinner"
-  ]
+    , "apple"
+    , "sandwich"
+    , "breakfast"
+    , "lunch"
+    , "dinner"
+    ]
 
-frenchWordsToPractice : List String
+frenchWordsToPractice : Array String
 frenchWordsToPractice =
-  [ "chat"
-  , "renard"
-  , "ors"
-  , "tortue"
-  , "chien"
+  Array.fromList
+    [ "chat"
+    , "renard"
+    , "ors"
+    , "tortue"
+    , "chien"
 
-  , "maman"
-  , "papa"
-  , "bébé"
+    , "maman"
+    , "papa"
+    , "bébé"
 
-  , "pomme"
-  , "sandwich"
-  , "petit déjeuner"
-  , "déjeuner"
-  , "dîner"
-  ]
+    , "pomme"
+    , "sandwich"
+    , "petit déjeuner"
+    , "déjeuner"
+    , "dîner"
+    ]
