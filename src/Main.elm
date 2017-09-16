@@ -5,6 +5,7 @@ module App exposing
   , update
   )
 
+import Ring
 import WordGameCss
 
 import Array exposing (..)
@@ -49,9 +50,7 @@ advanceSelectionIndex word selection =
     AdvanceToNextWord -> AdvanceToNextWord
 
 type alias Model =
-  { words : Array String
-  , currentWord : String
-  , currentWordIndex : Int
+  { words : Ring.Ring String
   , selectedIndex : SelectionIndex
   }
 
@@ -68,17 +67,9 @@ subscriptions model =
 
 model : Model
 model =
-  let
-    words = englishWordsToPractice
-    currentWord = case Array.get 0 words of
-                    Just word -> word
-                    Nothing   -> ""
-  in
-    { words            = words
-    , currentWord      = currentWord
-    , currentWordIndex = 0
-    , selectedIndex    = NoSelection
-    }
+  { words          = Ring.fromList englishWordsToPractice
+  , selectedIndex  = NoSelection
+  }
 
 
 view : Model -> Html Msg
@@ -89,7 +80,7 @@ view model =
     , Html.h3 [ ] [ Html.text "Words we practice:" ]
     , Html.ul
         [ Html.Attributes.id "items" ]
-        (Array.toList <| Array.map (\word -> Html.li [ ] [ Html.text word ]) model.words)
+        ( Array.toList <| Array.map (\word -> Html.li [ ] [ Html.text word ]) <| Ring.toArray model.words )
     ]
 
 
@@ -106,9 +97,10 @@ markupForCurrentWord model =
                    ( cssClassesForCurrentWord model.selectedIndex )
                  )
                ]
-               (String.toList model.currentWord
-               |> List.map String.fromChar
-               |> List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ] ))
+               ( ( String.toList <| Ring.value model.words )
+                 |> List.map String.fromChar
+                 |> ( List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ] ))
+               )
             ]
 
 cssForLetterAtIndex : Int -> Model -> List WordGameCss.CssClasses
@@ -145,19 +137,17 @@ handleKeyUp model i =
 handleSpacebar : Model -> Model
 handleSpacebar model =
   let
-    newModel = { model | selectedIndex = advanceSelectionIndex model.currentWord model.selectedIndex }
+    newModel = { model | selectedIndex = advanceSelectionIndex (Ring.value model.words) model.selectedIndex }
   in
     updateModel AdvanceIfNecessary newModel
 
 handleAdvance : Model -> Model
 handleAdvance model =
-  let
-    nextIndex = model.currentWordIndex + 1
-    nextWord = Maybe.withDefault "" <| Array.get nextIndex englishWordsToPractice
-  in
-    case model.selectedIndex of
-      AdvanceToNextWord -> { model | currentWordIndex = nextIndex, currentWord = nextWord, selectedIndex = NoSelection }
-      _                 -> model
+  case model.selectedIndex of
+    AdvanceToNextWord -> { model | words = Ring.advance model.words
+                         , selectedIndex = NoSelection
+                         }
+    _                 -> model
 
 main =
   Html.program
@@ -167,42 +157,40 @@ main =
     , subscriptions = subscriptions
     }
 
-englishWordsToPractice : Array String
+englishWordsToPractice : List String
 englishWordsToPractice =
-  Array.fromList
-    [ "cat"
-    , "fox"
-    , "bear"
-    , "turtle"
-    , "dog"
+  [ "cat"
+  , "fox"
+  , "bear"
+  , "turtle"
+  , "dog"
 
-    , "mommy"
-    , "daddy"
-    , "baby"
+  , "mommy"
+  , "daddy"
+  , "baby"
 
-    , "apple"
-    , "sandwich"
-    , "breakfast"
-    , "lunch"
-    , "dinner"
-    ]
+  , "apple"
+  , "sandwich"
+  , "breakfast"
+  , "lunch"
+  , "dinner"
+  ]
 
-frenchWordsToPractice : Array String
+frenchWordsToPractice : List String
 frenchWordsToPractice =
-  Array.fromList
-    [ "chat"
-    , "renard"
-    , "ors"
-    , "tortue"
-    , "chien"
+  [ "chat"
+  , "renard"
+  , "ors"
+  , "tortue"
+  , "chien"
 
-    , "maman"
-    , "papa"
-    , "bébé"
+  , "maman"
+  , "papa"
+  , "bébé"
 
-    , "pomme"
-    , "sandwich"
-    , "petit déjeuner"
-    , "déjeuner"
-    , "dîner"
-    ]
+  , "pomme"
+  , "sandwich"
+  , "petit déjeuner"
+  , "déjeuner"
+  , "dîner"
+  ]
