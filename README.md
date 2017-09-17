@@ -16,6 +16,9 @@ Tasks
 * [x] button to highlight the word (in red ?)
 * [x] second button goes back (but will not return to before highlighted state)
 * [x] button highlights each letter in turn
+* [x] rapidly simplify the UI
+* [x] center the word in the screen
+* [ ] tap / click should advance
 * [ ] then show the word in french (?)
 * [ ] probably change the model to take in pairs
 * [ ] fair use images

@@ -75,33 +75,19 @@ model =
 view : Model -> Html Msg
 view model =
   Html.div [ ]
-    [ Html.h1 [ ] [ Html.text "Let's practice words with Woden!" ]
-    , markupForCurrentWord model
-    , Html.h3 [ ] [ Html.text "Words we practice:" ]
-    , Html.ul
-        [ Html.Attributes.id "items" ]
-        ( Array.toList <| Array.map (\word -> Html.li [ ] [ Html.text word ]) <| Ring.toArray model.words )
-    ]
+    [ Html.span
+       [ class
+         ( List.append
+           [ WordGameCss.CurrentWord ]
+           ( cssClassesForCurrentWord model.selectedIndex )
+         )
+       ]
+       ( ( String.toList <| Ring.value model.words )
+         |> List.map String.fromChar
+         |> ( List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ] ))
+       )
+     ]
 
-
-markupForCurrentWord : Model -> Html Msg
-markupForCurrentWord model =
-   Html.div [ class [ WordGameCss.CurrentWordContainer ] ]
-            [ Html.h2
-               [ class [ WordGameCss.CurrentWordLabel ] ]
-               [ Html.text "Current word:" ]
-            , Html.span
-               [ class
-                 ( List.append
-                   [ WordGameCss.CurrentWord ]
-                   ( cssClassesForCurrentWord model.selectedIndex )
-                 )
-               ]
-               ( ( String.toList <| Ring.value model.words )
-                 |> List.map String.fromChar
-                 |> ( List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ] ))
-               )
-            ]
 
 cssForLetterAtIndex : Int -> Model -> List WordGameCss.CssClasses
 cssForLetterAtIndex index model =
