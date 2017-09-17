@@ -1,13 +1,7 @@
 Elm-Words
 =========
 
-A small project written in elm to help my son learn new words.
-
-
-Completed Tasks
----------------
-* show a list of words we want to practice
-* show the current word
+A small webapp written in elm to help my son learn new words.
 
 
 Tasks
@@ -18,14 +12,14 @@ Tasks
 * [x] button highlights each letter in turn
 * [x] rapidly simplify the UI
 * [x] center the word in the screen
-* [ ] tap / click should advance
-* [ ] then show the word in french (?)
-* [ ] probably change the model to take in pairs
+* [x] compare / contrast Html.beginnerProgram with the docs?
+* [x] tap / click should advance
+* [ ] deploy to CF ?
+* [ ] then show the word in french
+* [ ] refactor the model to take in pairs of words
 * [ ] fair use images
 * [ ] tests ? (how could I start with tests next time ?)
-* [ ] deploy to CF ?
-* [ ] show a random english word (?)
-* [ ] compare / contrast Html.beginnerProgram with the docs?
+* [ ] show a random english word at startup (?)
 
 
 Open Questions
@@ -38,6 +32,6 @@ Open Questions
 
 Pain Points
 -----------
-* having to run `elm css` after each change
+* having to run `elm css && elm make` after each change
 * elm-format
 * better emacs mode ?

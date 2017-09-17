@@ -16,6 +16,7 @@ import Html.Events exposing (on, keyCode)
 import Json.Decode as Json
 import Keyboard
 import List
+import Mouse
 import Random
 import Task
 import Time
@@ -27,7 +28,8 @@ import Html.CssHelpers
     Html.CssHelpers.withNamespace "wordgame"
 
 type Msg
-  = KeyMsg Keyboard.KeyCode
+  = KeyUpMsg Keyboard.KeyCode
+  | ClickMsg Mouse.Position
   | SpacebarPressed
   | AdvanceIfNecessary
 
@@ -49,6 +51,7 @@ advanceSelectionIndex word selection =
     EverythingAgain   -> AdvanceToNextWord
     AdvanceToNextWord -> AdvanceToNextWord
 
+
 type alias Model =
   { words : Ring.Ring String
   , selectedIndex : SelectionIndex
@@ -62,7 +65,7 @@ init =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.batch [ Keyboard.downs KeyMsg ]
+  Sub.batch [ Keyboard.ups KeyUpMsg, Mouse.clicks ClickMsg ]
 
 
 model : Model
@@ -105,13 +108,14 @@ cssClassesForCurrentWord index =
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  ( (updateModel msg model), Cmd.none )
+  ( updateModel msg model, Cmd.none )
 
 updateModel : Msg -> Model -> Model
 updateModel msg model =
   case msg of
-    KeyMsg i           -> handleKeyUp model i
+    KeyUpMsg i         -> handleKeyUp model i
     SpacebarPressed    -> handleSpacebar model
+    ClickMsg pos       -> handleMouseClick pos model
     AdvanceIfNecessary -> handleAdvance model
 
 handleKeyUp : Model -> Int -> Model
@@ -126,6 +130,10 @@ handleSpacebar model =
     newModel = { model | selectedIndex = advanceSelectionIndex (Ring.value model.words) model.selectedIndex }
   in
     updateModel AdvanceIfNecessary newModel
+
+handleMouseClick : Mouse.Position -> Model -> Model
+handleMouseClick position model =
+  handleSpacebar model
 
 handleAdvance : Model -> Model
 handleAdvance model =
