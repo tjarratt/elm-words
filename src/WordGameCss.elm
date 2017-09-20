@@ -17,21 +17,21 @@ type CssIds
 
 css =
     (stylesheet << namespace "wordgame")
-    [ body
-        [ margin (px 20) ]
-   , class CurrentWordLabel
-        [ display inlineBlock
-        , margin4 (px 0) (px 15) (px 0) (px 0)
+        [ body
+            [ margin (px 20) ]
+        , class CurrentWordLabel
+            [ display inlineBlock
+            , margin4 (px 0) (px 15) (px 0) (px 0)
+            ]
+        , class CurrentWord
+            [ fontSize (pct 500)
+            , position fixed
+            , left (pct 50)
+            , top (pct 50)
+            , transform <| translate2 (pct -50) (pct -50)
+            , property "user-select" "none"
+            , cursor default
+            ]
+        , class CurrentWordSelected
+            [ color (hex "f3336c") ]
         ]
-   , class CurrentWord
-        [ fontSize (pct 500)
-        , position fixed
-        , left (pct 50)
-        , top (pct 50)
-        , transform <| translate2 (pct -50) (pct -50)
-        , property "user-select" "none"
-        , cursor default
-        ]
-   , class CurrentWordSelected
-        [ color (hex "f3336c") ]
-   ]

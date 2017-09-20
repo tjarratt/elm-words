@@ -2,6 +2,6 @@
 
 set -ex
 
-elm-css src/Stylesheets.elm 
+elm-format src --yes
+elm-css src/Stylesheets.elm
 elm-make --output=index.js src/Main.elm --yes
-
