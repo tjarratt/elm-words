@@ -1,0 +1,5 @@
+---
+applications:
+- name: wodens-words
+  buildpack: staticfile_buildpack
+  path: tmp

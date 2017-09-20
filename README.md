@@ -14,9 +14,8 @@ Tasks
 * [x] center the word in the screen
 * [x] compare / contrast Html.beginnerProgram with the docs?
 * [x] tap / click should advance
-* [ ] deploy to CF ?
+* [x] deploy to CF ?
 * [ ] then show the word in french
-* [ ] refactor the model to take in pairs of words
 * [ ] fair use images
 * [ ] tests ? (how could I start with tests next time ?)
 * [ ] show a random english word at startup (?)
@@ -26,6 +25,7 @@ Open Questions
 --------------
 * do we want to track how often the user is correct / wrong ?
 * do we want to be able to enter new words ?
+* do we want a backend ?
 * review notes from elm conference
 * try to make it prettier (think about flexbox)
 
