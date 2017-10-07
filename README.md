@@ -33,5 +33,4 @@ Open Questions
 Pain Points
 -----------
 * having to run `elm css && elm make` after each change
-* elm-format
 * better emacs mode ?
