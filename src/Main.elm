@@ -33,6 +33,13 @@ type Msg
     | ClickMsg Mouse.Position
     | SpacebarPressed
     | AdvanceIfNecessary
+    | SelectedColorsMode
+    | SelectedWordsMode
+
+
+type GameMode
+    = PracticeColors
+    | PracticeWords
 
 
 type SelectionIndex
@@ -66,9 +73,18 @@ advanceSelectionIndex word selection =
 
 
 type alias Model =
-    { words : Ring.Ring String
+    { gameMode : Maybe GameMode
+    , words : Ring.Ring String
     , selectedIndex : SelectionIndex
+    , colors : Ring.Ring ( String, String )
+    , colorsVisible : ColorsVisible
     }
+
+
+type ColorsVisible
+    = JustTheColor
+    | ColorAndEnglish
+    | ColorAndEnglishAndFrench
 
 
 init : ( Model, Cmd Msg )
@@ -76,33 +92,94 @@ init =
     ( model, Cmd.none )
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch [ Keyboard.ups KeyUpMsg, Mouse.clicks ClickMsg ]
-
-
 model : Model
 model =
-    { words = Ring.fromList englishWordsToPractice
+    { gameMode = Nothing
+    , words = Ring.fromList englishWordsToPractice
     , selectedIndex = NoSelection
+    , colors = Ring.fromList colors
+    , colorsVisible = JustTheColor
     }
+
+
+gameModeButton : String -> Msg -> Html Msg
+gameModeButton title msg =
+    Html.button
+        [ class [ WordGameCss.GameModeButton ]
+        , Html.Events.onClick msg
+        ]
+        [ Html.text title ]
 
 
 view : Model -> Html Msg
 view model =
-    Html.div []
-        [ Html.span
-            [ class
-                (List.append
-                    [ WordGameCss.CurrentWord ]
-                    (cssClassesForCurrentWord model.selectedIndex)
-                )
-            ]
-            ((String.toList <| Ring.value model.words)
-                |> List.map String.fromChar
-                |> (List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ]))
-            )
+    case model.gameMode of
+        Nothing ->
+            Html.div [ class [ WordGameCss.GameModeList ] ]
+                [ gameModeButton "Colors" SelectedColorsMode
+                , gameModeButton "Words" SelectedWordsMode
+                ]
+
+        Just PracticeWords ->
+            Html.div []
+                [ Html.span
+                    [ class
+                        (List.append
+                            [ WordGameCss.CurrentWord ]
+                            (cssClassesForSelectionIndex model.selectedIndex)
+                        )
+                    ]
+                    ((String.toList <| Ring.value model.words)
+                        |> List.map String.fromChar
+                        |> (List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ]))
+                    )
+                ]
+
+        Just PracticeColors ->
+            case model.colorsVisible of
+                JustTheColor ->
+                    let
+                        theColor =
+                            Tuple.first <| Ring.value model.colors
+
+                        colorCode =
+                            (hexCodeForColor theColor)
+                    in
+                        Html.div [] [ colorBlock colorCode ]
+
+                ColorAndEnglish ->
+                    let
+                        theColor =
+                            Tuple.first <| Ring.value model.colors
+
+                        colorCode =
+                            (hexCodeForColor theColor)
+                    in
+                        Html.div []
+                            [ colorBlock colorCode
+                            , Html.span
+                                [ class <|
+                                    List.append
+                                        [ WordGameCss.CurrentColorText ]
+                                        (cssClassesForSelectionIndex model.selectedIndex)
+                                ]
+                                ((String.toList <| theColor)
+                                    |> List.map String.fromChar
+                                    |> (List.indexedMap (\index c -> Html.span [ class <| cssForLetterAtIndex index model ] [ Html.text c ]))
+                                )
+                            ]
+
+                ColorAndEnglishAndFrench ->
+                    Html.div [] []
+
+
+colorBlock : String -> Html Msg
+colorBlock colorCode =
+    Html.span
+        [ class [ WordGameCss.CurrentWord, WordGameCss.CurrentColor ]
+        , Html.Attributes.style [ ( "backgroundColor", colorCode ) ]
         ]
+        [ Html.text " " ]
 
 
 cssForLetterAtIndex : Int -> Model -> List WordGameCss.CssClasses
@@ -118,8 +195,8 @@ cssForLetterAtIndex index model =
             []
 
 
-cssClassesForCurrentWord : SelectionIndex -> List WordGameCss.CssClasses
-cssClassesForCurrentWord index =
+cssClassesForSelectionIndex : SelectionIndex -> List WordGameCss.CssClasses
+cssClassesForSelectionIndex index =
     case index of
         NoSelection ->
             []
@@ -134,6 +211,43 @@ cssClassesForCurrentWord index =
             []
 
 
+hexCodeForColor : String -> String
+hexCodeForColor color =
+    case color of
+        "red" ->
+            "#EB0500"
+
+        "blue" ->
+            "#0066EB"
+
+        "yellow" ->
+            "#EBDF00"
+
+        "green" ->
+            "#00EB38"
+
+        "orange" ->
+            "#EBA000"
+
+        "purple" ->
+            "#B200EB"
+
+        "black" ->
+            "#000000"
+
+        "white" ->
+            "#FFFFFF"
+
+        "brown" ->
+            "#895B1A"
+
+        "pink" ->
+            "#E845BE"
+
+        _ ->
+            "#WHOOPS"
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     ( updateModel msg model, Cmd.none )
@@ -142,6 +256,12 @@ update msg model =
 updateModel : Msg -> Model -> Model
 updateModel msg model =
     case msg of
+        SelectedColorsMode ->
+            { model | gameMode = Just PracticeColors }
+
+        SelectedWordsMode ->
+            { model | gameMode = Just PracticeWords }
+
         KeyUpMsg i ->
             handleKeyUp model i
 
@@ -167,7 +287,23 @@ handleSpacebar : Model -> Model
 handleSpacebar model =
     let
         newModel =
-            { model | selectedIndex = advanceSelectionIndex (Ring.value model.words) model.selectedIndex }
+            case model.gameMode of
+                Nothing ->
+                    model
+
+                Just PracticeWords ->
+                    { model | selectedIndex = advanceSelectionIndex (Ring.value model.words) model.selectedIndex }
+
+                Just PracticeColors ->
+                    case model.colorsVisible of
+                        JustTheColor ->
+                            { model | colorsVisible = ColorAndEnglish }
+
+                        ColorAndEnglish ->
+                            { model | selectedIndex = advanceSelectionIndex (Tuple.first <| Ring.value model.colors) model.selectedIndex }
+
+                        ColorAndEnglishAndFrench ->
+                            model
     in
         updateModel AdvanceIfNecessary newModel
 
@@ -181,10 +317,21 @@ handleAdvance : Model -> Model
 handleAdvance model =
     case model.selectedIndex of
         AdvanceToNextWord ->
-            { model
-                | words = Ring.advance model.words
-                , selectedIndex = NoSelection
-            }
+            case model.gameMode of
+                Just PracticeWords ->
+                    { model
+                        | words = Ring.advance model.words
+                        , selectedIndex = NoSelection
+                    }
+
+                Just PracticeColors ->
+                    { model
+                        | colors = Ring.advance model.colors
+                        , selectedIndex = NoSelection
+                    }
+
+                Nothing ->
+                    model
 
         _ ->
             model
@@ -197,6 +344,31 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.gameMode of
+        Nothing ->
+            Sub.none
+
+        Just _ ->
+            Sub.batch [ Keyboard.ups KeyUpMsg, Mouse.clicks ClickMsg ]
+
+
+colors : List ( String, String )
+colors =
+    [ ( "red", "rouge" )
+    , ( "blue", "bleu" )
+    , ( "yellow", "jaune" )
+    , ( "green", "vert" )
+    , ( "orange", "orange" )
+    , ( "purple", "violet" )
+    , ( "black", "noir" )
+    , ( "white", "blanc" )
+    , ( "brown", "brun" )
+    , ( "pink", "rose" )
+    ]
 
 
 englishWordsToPractice : List String
